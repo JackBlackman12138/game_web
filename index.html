@@ -10,7 +10,7 @@
 <body>
     <header class="glass-panel">
         <div class="header-info">
-            <h1>🎮 超神制作人 <span class="version">v3.0 商业帝国</span></h1>
+            <h1>🎮 超神制作人 <span class="version">v4.0 商业大亨</span></h1>
             <div class="global-stats">
                 <p>公司资金: <span id="money-display" class="money">1,000,000</span> <span class="currency">CNY</span></p>
                 <p>总影响力: <span id="total-influence-display" class="text-warning highlight">0</span></p>
@@ -18,7 +18,8 @@
             </div>
         </div>
         <div>
-            <button onclick="endGameAndSettle()" class="btn warning-btn glow-effect" style="margin-right: 15px;">📊 结算估值 (存档)</button>
+            <button onclick="openFinanceModal()" class="btn action-btn glow-effect" style="margin-right: 15px;">🧾 财务账单</button>
+            <button onclick="endGameAndSettle()" class="btn warning-btn glow-effect" style="margin-right: 15px;">📊 结算估值</button>
             <button id="next-month-btn" class="btn primary-btn glow-effect">推进下个月 ➔</button>
         </div>
     </header>
@@ -44,15 +45,12 @@
     <div id="new-project-modal" class="modal hidden">
         <div class="modal-content glass-panel">
             <h3>📝 确立新项目方向</h3>
-            <p>请选择你要开发的游戏类型（影响开发周期与收费模式）：</p>
-            
             <h4 style="color:var(--text-muted); margin-bottom: 5px;">【买断制】前期爆发，后续递减</h4>
             <div class="role-grid">
                 <button class="btn role-btn" onclick="createProject('买断制', '独立肉鸽', 8)">⚔️ 独立肉鸽 (周期:8个月)</button>
                 <button class="btn role-btn" onclick="createProject('买断制', '模拟经营', 15)">🏘️ 模拟经营 (周期:1.5年)</button>
                 <button class="btn role-btn" onclick="createProject('买断制', '3A大作', 24)">🎬 3A大作 (周期:2年)</button>
             </div>
-
             <h4 style="color:var(--text-muted); margin-top: 15px; margin-bottom: 5px;">【内购制】依赖运营，长线滚雪球</h4>
             <div class="role-grid">
                 <button class="btn role-btn" onclick="createProject('内购制', '休闲肉鸽', 5)">🍉 休闲肉鸽 (周期:5个月)</button>
@@ -86,11 +84,11 @@
                     <span id="dash-type-badge" class="project-badge" style="margin-left: 10px;">类型</span>
                 </div>
                 <div>
+                    <button id="dash-publish-btn" onclick="openPublishModal()" class="btn primary-btn hidden" style="margin-right: 15px; animation: pulse 1.5s infinite;">🚀 发布上线！</button>
                     <button onclick="confirmDeleteProject()" class="btn danger-btn" style="margin-right: 15px;">🗑️ 解散该项目</button>
                     <button onclick="closeProjectDashboard()" class="btn">关闭看板</button>
                 </div>
             </div>
-            
             <div class="dash-body">
                 <div class="dash-section stats-section">
                     <h3>📊 核心数据看板 (满分100)</h3>
@@ -103,15 +101,10 @@
                         <div class="stat-box"><span class="label">买量折扣 (市场)</span><span class="value text-danger" id="dash-uadiscount">0%</span></div>
                     </div>
                 </div>
-
                 <div class="dash-section team-section">
-                    <div class="section-header">
-                        <h3>👨‍💻 项目专属团队</h3>
-                        <button onclick="openAssignModal()" class="btn action-btn text-small">分配空闲人员</button>
-                    </div>
+                    <div class="section-header"><h3>👨‍💻 项目专属团队</h3><button onclick="openAssignModal()" class="btn action-btn text-small">分配空闲人员</button></div>
                     <div id="dash-team-list" class="dash-team-list"></div>
                 </div>
-
                 <div class="dash-section finance-section">
                     <div class="section-header">
                         <h3>💰 财务与运营报表</h3>
@@ -125,33 +118,52 @@
                             </select>
                         </div>
                     </div>
-                    <div class="chart-wrapper">
-                        <canvas id="dash-chart"></canvas>
-                    </div>
+                    <div class="chart-wrapper"><canvas id="dash-chart"></canvas></div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="assign-modal" class="modal hidden"><div class="modal-content glass-panel"><h3>📥 调配人员入组</h3><div id="idle-employee-list" class="flex-col"></div><div class="modal-actions"><button onclick="closeModal('assign-modal')" class="btn">完成</button></div></div></div>
-    <div id="fire-modal" class="modal hidden"><div class="modal-content glass-panel"><h3>⚠️ 解雇确认</h3><p id="fire-desc"></p><div class="modal-actions"><button id="confirm-fire-btn" class="btn danger-btn">确认开除</button><button onclick="closeModal('fire-modal')" class="btn">取消</button></div></div></div>
-    <div id="event-modal" class="modal hidden"><div class="modal-content glass-panel"><h3 id="event-title">🚨 突发事件</h3><p id="event-desc"></p><div id="event-options" class="modal-actions flex-col"></div></div></div>
-
-    <div id="settlement-modal" class="modal hidden">
+    <div id="publish-modal" class="modal hidden">
         <div class="modal-content glass-panel">
-            <h2 style="color: var(--warning); text-align: center;">🏆 商业帝国结算报告</h2>
-            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 20px 0;">
-                <p>最终账面资金: <strong id="settle-money" class="text-primary">0</strong> CNY</p>
-                <p>全网总影响力: <strong id="settle-influence" class="text-warning">0</strong></p>
-                <hr style="border-color: var(--glass-border); margin: 15px 0;">
-                <h3 style="margin:0;">最终公司估值: <span id="settle-valuation" style="color: #f59e0b; font-size: 1.5em;">0</span> CNY</h3>
-                <p style="font-size: 0.8em; color: var(--text-muted);">*估值公式：总资金 + 总资金 × (总影响力 ÷ 100)</p>
+            <h3 style="color: var(--primary);">🌐 选择发行平台</h3>
+            <p style="color: var(--text-muted); font-size: 0.9em;">不同平台对游戏类型有不同的偏好，选错平台可能导致口碑暴跌（降低影响力），上架也会收取相应的资质费用。</p>
+            <div class="platform-options flex-col" style="margin-top: 20px;">
+                <label class="platform-checkbox"><input type="checkbox" id="plat-pc" checked> <span>💻 PC (Steam) [抽成30% / 免费上架 / 买断制极佳]</span></label>
+                <label class="platform-checkbox"><input type="checkbox" id="plat-ps"> <span>🎮 PS主机 [抽成30% / 开发机费: ￥50,000 / 内购制会被喷]</span></label>
+                <label class="platform-checkbox"><input type="checkbox" id="plat-ios"> <span>🍏 iOS [抽成30% / 审核费: ￥10,000 / 内购制极佳]</span></label>
+                <label class="platform-checkbox"><input type="checkbox" id="plat-android"> <span>安卓 [抽成30% / 免费上架 / 内购制极佳]</span></label>
             </div>
             <div class="modal-actions">
-                <button onclick="location.reload()" class="btn primary-btn" style="width: 100%;">保存记录并重新开始</button>
+                <button onclick="confirmPublish()" class="btn primary-btn">支付费用并正式发行！</button>
+                <button onclick="closeModal('publish-modal')" class="btn">取消</button>
             </div>
         </div>
     </div>
+
+    <div id="finance-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3>🧾 上月财务账单</h3>
+            <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px;">
+                <p><strong>[收入项]</strong></p>
+                <p style="color: var(--success);">+ 游戏总流水: ￥<span id="fin-revenue">0</span></p>
+                <hr style="border-color: var(--glass-border); margin: 10px 0;">
+                <p><strong>[支出项]</strong></p>
+                <p style="color: var(--danger);">- 员工总薪资: ￥<span id="fin-salary">0</span></p>
+                <p style="color: var(--danger);">- 办公室租金及水电: ￥<span id="fin-rent">0</span></p>
+                <p style="color: var(--danger);">- 服务器及办公设备: ￥<span id="fin-server">0</span></p>
+                <p style="color: var(--danger);">- 买量宣发费用: ￥<span id="fin-ua">0</span></p>
+                <hr style="border-color: var(--glass-border); margin: 10px 0;">
+                <h4 style="margin:0;">上月净利润: <span id="fin-profit" style="font-size: 1.2em;">0</span></h4>
+            </div>
+            <div class="modal-actions"><button onclick="closeModal('finance-modal')" class="btn primary-btn">我知道了</button></div>
+        </div>
+    </div>
+
+    <div id="assign-modal" class="modal hidden"><div class="modal-content glass-panel"><h3>📥 调配人员入组</h3><div id="idle-employee-list" class="flex-col"></div><div class="modal-actions"><button onclick="closeModal('assign-modal')" class="btn">完成</button></div></div></div>
+    <div id="fire-modal" class="modal hidden"><div class="modal-content glass-panel"><h3>⚠️ 解雇确认</h3><p id="fire-desc"></p><div class="modal-actions"><button onclick="executeFire()" class="btn danger-btn">确认开除</button><button onclick="closeModal('fire-modal')" class="btn">取消</button></div></div></div>
+    <div id="event-modal" class="modal hidden"><div class="modal-content glass-panel"><h3 id="event-title">🚨 突发事件</h3><p id="event-desc"></p><div id="event-options" class="modal-actions flex-col"></div></div></div>
+    <div id="settlement-modal" class="modal hidden"><div class="modal-content glass-panel"><h2 style="color: var(--warning); text-align: center;">🏆 商业帝国结算报告</h2><div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 8px; margin: 20px 0;"><p>最终账面资金: <strong id="settle-money" class="text-primary">0</strong> CNY</p><p>全网总影响力: <strong id="settle-influence" class="text-warning">0</strong></p><hr style="border-color: var(--glass-border); margin: 15px 0;"><h3 style="margin:0;">最终公司估值: <span id="settle-valuation" style="color: #f59e0b; font-size: 1.5em;">0</span> CNY</h3><p style="font-size: 0.8em; color: var(--text-muted);">*估值公式：总资金 + 总资金 × (总影响力 ÷ 100)</p></div><div class="modal-actions"><button onclick="location.reload()" class="btn primary-btn" style="width: 100%;">保存记录并重新开始</button></div></div></div>
 
     <script src="game.js"></script>
 </body>
