@@ -1,24 +1,79 @@
-// --- 全局状态 ---
-const GAME_STATE = {
-    money: 1000000,
-    month: 1,
-    employees: [],
-    projects: [],
-    employeeIdCounter: 1,
-    projectIdCounter: 1,
-    pendingFireId: null,
-    currentViewingProjectId: null,
-    totalInfluence: 0,
-    hasTriggeredInvestment: false,
-    lastFinance: { revenue: 0, salary: 0, rent: 0, server: 0, ua: 0, profit: 0 }
-};
+// --- 全局变量设定 (改为let，方便覆盖存档) ---
+let GAME_STATE = getInitialState();
+let globalChartInstance = null; 
+
+function getInitialState() {
+    return {
+        money: 1000000,
+        month: 1,
+        employees: [],
+        projects: [],
+        employeeIdCounter: 1,
+        projectIdCounter: 1,
+        pendingFireId: null,
+        currentViewingProjectId: null,
+        totalInfluence: 0,
+        hasTriggeredInvestment: false,
+        lastFinance: { revenue: 0, salary: 0, rent: 0, server: 0, ua: 0, profit: 0 }
+    };
+}
 
 document.addEventListener("DOMContentLoaded", () => {
+    // 页面加载时默认只显示主菜单
+    document.getElementById("next-month-btn").addEventListener("click", nextMonth);
+});
+
+// ================= 主菜单与存取档系统 =================
+function startNewGame() {
+    GAME_STATE = getInitialState();
+    document.getElementById("main-menu").classList.add("hidden");
+    document.getElementById("game-ui").classList.remove("hidden");
     updateHeader();
     renderEmployees();
     renderProjects();
-    document.getElementById("next-month-btn").addEventListener("click", nextMonth);
-});
+}
+
+function saveGame() {
+    localStorage.setItem('GameCreatorSave', JSON.stringify(GAME_STATE));
+    alert("💾 游戏进度已保存！");
+}
+
+function loadGame() {
+    let saved = localStorage.getItem('GameCreatorSave');
+    if (!saved) {
+        alert("⚠️ 没有找到存档，请先开始新游戏并保存！");
+        return;
+    }
+    GAME_STATE = JSON.parse(saved);
+    document.getElementById("main-menu").classList.add("hidden");
+    document.getElementById("game-ui").classList.remove("hidden");
+    updateHeader();
+    renderEmployees();
+    renderProjects();
+    alert("✅ 成功读取进度！欢迎回来，老板。");
+}
+
+function openHistoryModal() {
+    const historyList = document.getElementById("history-list");
+    let records = JSON.parse(localStorage.getItem("GameCreatorRecords") || "[]");
+    
+    if (records.length === 0) {
+        historyList.innerHTML = "<p style='text-align:center; color:var(--text-muted);'>暂无公司结算记录，去建立你的第一个商业帝国吧！</p>";
+    } else {
+        historyList.innerHTML = records.reverse().map((r, i) => `
+            <div style="background:#00000040; padding:15px; border-radius:8px; display:flex; justify-content:space-between; align-items:center; border-left:4px solid var(--warning);">
+                <div>
+                    <strong style="font-size:1.1rem;">记录 #${records.length - i}</strong><br>
+                    <span style="font-size:0.85rem; color:var(--text-muted);">${r.date} | 存活 ${r.monthsSurvived} 个月</span>
+                </div>
+                <div style="font-size:1.3rem; font-weight:900; color:var(--warning);">
+                    ￥${r.valuation.toLocaleString()}
+                </div>
+            </div>
+        `).join("");
+    }
+    openModal("history-modal");
+}
 
 function updateHeader() {
     document.getElementById("money-display").innerText = GAME_STATE.money.toLocaleString();
@@ -27,6 +82,7 @@ function updateHeader() {
     document.getElementById("total-influence-display").innerText = Math.floor(GAME_STATE.totalInfluence);
 }
 
+// --- 核心循环：推进岁月 ---
 function nextMonth() {
     if (GAME_STATE.projects.some(p => p.stage === 2)) {
         alert("⚠️ 警告：有项目已经研发100%并处于【提审阶段】，请前往项目工作室手动【发布上线】，否则无法推进下个月！");
@@ -62,8 +118,15 @@ function nextMonth() {
     }
 
     if (GAME_STATE.money < 0) {
-        alert("现金流断裂！你的公司破产了！即将为您结算...");
-        endGameAndSettle(); return;
+        alert("💸 现金流断裂！你的公司破产了！即将为您清算...");
+        endGameAndSettle(true); return;
+    }
+
+    // ================= 5年自动结束逻辑 =================
+    if (GAME_STATE.month >= 60) {
+        alert("⏱️ 5年期限已到！游戏结束，即将为您清算最终商业帝国估值！");
+        endGameAndSettle(false);
+        return;
     }
 
     GAME_STATE.month++;
@@ -71,7 +134,7 @@ function nextMonth() {
     if (GAME_STATE.currentViewingProjectId) openProjectDashboard(GAME_STATE.currentViewingProjectId);
 }
 
-// ================= 人事系统 =================
+// ================= 人事系统 (加入空状态UI) =================
 function hireEmployee(role) {
     const names = ["大伟", "老贼", "小岛", "三上", "实习生", "地中海", "肝帝"];
     const baseSalaries = { "程序": 15000, "美术": 12000, "策划": 10000, "QA": 8000, "运营": 9000, "市场": 11000 };
@@ -81,6 +144,10 @@ function hireEmployee(role) {
 
 function renderEmployees() {
     const list = document.getElementById("employee-list"); list.innerHTML = "";
+    if (GAME_STATE.employees.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">🪑</div><h3>工位空空如也</h3><p>点击右上角 [招募人才] 开始建立团队！</p></div>`;
+        return;
+    }
     GAME_STATE.employees.forEach(emp => list.appendChild(createEmployeeCardHTML(emp, false)));
 }
 
@@ -93,7 +160,6 @@ function createEmployeeCardHTML(emp, isInsideProject) {
     let statusHTML = !isInsideProject ? `<div class="badge" style="background:#00000040; color:#fff; margin-bottom:10px;">项目: ${projName}</div>` : '';
     let actionBtn = isInsideProject ? `<button class="btn danger-btn" onclick="removeFromProject(${emp.id})">踢出</button>` : `<button class="btn danger-btn" onclick="requestFire(${emp.id})">解雇</button>`;
 
-    // 适配新版UI的员工卡片
     card.innerHTML = `
         <div class="emp-top">
             <div class="emp-name-role">
@@ -146,7 +212,7 @@ function executeFire() {
     GAME_STATE.employees.splice(idx, 1); closeModal("fire-modal"); updateHeader(); refreshViews();
 }
 
-// ================= 项目引擎 =================
+// ================= 项目引擎 (加入空状态UI) =================
 function createProject(bizType, genre, targetMonths) {
     const proj = {
         id: GAME_STATE.projectIdCounter++, name: `${genre}项目 0${GAME_STATE.projectIdCounter}`,
@@ -195,6 +261,10 @@ function processProjectLogic(proj) {
 
 function renderProjects() {
     const list = document.getElementById("project-list"); list.innerHTML = "";
+    if (GAME_STATE.projects.length === 0) {
+        list.innerHTML = `<div class="empty-state"><div class="empty-state-icon">💿</div><h3>暂无在研项目</h3><p>点击右上角 [立项新游戏] 开启你的征途！</p></div>`;
+        return;
+    }
     GAME_STATE.projects.forEach(proj => {
         const teamCount = GAME_STATE.employees.filter(e => e.projectId === proj.id).length;
         const stageText = ["", "研发中", "等待发布", "刚首发", "长线运营"][proj.stage];
@@ -218,7 +288,7 @@ function renderProjects() {
     });
 }
 
-// ================= 控制台与发布 (BUG修复核心区) =================
+// ================= 控制台与发布 =================
 function openProjectDashboard(id) {
     const proj = GAME_STATE.projects.find(p => p.id === id); if (!proj) return;
     GAME_STATE.currentViewingProjectId = id;
@@ -243,24 +313,11 @@ function openProjectDashboard(id) {
     renderDashboardChart(proj); openModal("project-dashboard-modal");
 }
 
-function closeProjectDashboard() { 
-    GAME_STATE.currentViewingProjectId = null; // 只有点击正常关闭才清空ID
-    closeModal("project-dashboard-modal"); 
-}
-
+function closeProjectDashboard() { GAME_STATE.currentViewingProjectId = null; closeModal("project-dashboard-modal"); }
 function changeProjectUA(val) { if (GAME_STATE.currentViewingProjectId) { const proj = GAME_STATE.projects.find(p => p.id === GAME_STATE.currentViewingProjectId); if (proj) proj.uaCost = parseInt(val); } }
 
-// 修复后的发布逻辑
-function openPublishModal() {
-    // 隐藏控制台，但不触发 closeProjectDashboard，所以 currentViewingProjectId 仍然保留！
-    document.getElementById("project-dashboard-modal").classList.add("hidden");
-    openModal('publish-modal');
-}
-function cancelPublish() {
-    closeModal('publish-modal');
-    // 恢复显示控制台
-    document.getElementById("project-dashboard-modal").classList.remove("hidden");
-}
+function openPublishModal() { document.getElementById("project-dashboard-modal").classList.add("hidden"); openModal('publish-modal'); }
+function cancelPublish() { closeModal('publish-modal'); document.getElementById("project-dashboard-modal").classList.remove("hidden"); }
 
 function confirmPublish() {
     const proj = GAME_STATE.projects.find(p => p.id === GAME_STATE.currentViewingProjectId);
@@ -284,9 +341,7 @@ function confirmPublish() {
     if (influenceMod < 0) msg += `\n⚠️ 玩家抗议：主机首发手游导致口碑暴降！`; else if (influenceMod > 10) msg += `\n🔥 平台受众完美匹配，额外获得影响力！`;
     alert(msg);
 
-    closeModal('publish-modal');
-    GAME_STATE.currentViewingProjectId = null; // 发布成功后清空
-    updateHeader(); renderProjects();
+    closeModal('publish-modal'); GAME_STATE.currentViewingProjectId = null; updateHeader(); renderProjects();
 }
 
 function confirmDeleteProject() {
@@ -334,12 +389,26 @@ function triggerInvestmentEvent() {
     openModal("event-modal");
 }
 
-function endGameAndSettle() {
+// 终极结算逻辑 (支持强制结算和中途放弃)
+function endGameAndSettle(isBankrupt) {
     let safeMoney = Math.max(0, GAME_STATE.money); 
     let valuation = safeMoney + (safeMoney * (GAME_STATE.totalInfluence / 100));
+    
+    // 如果破产，估值强制为 0
+    if (isBankrupt) valuation = 0;
+
     document.getElementById("settle-money").innerText = GAME_STATE.money.toLocaleString();
     document.getElementById("settle-influence").innerText = Math.floor(GAME_STATE.totalInfluence);
     document.getElementById("settle-valuation").innerText = Math.floor(valuation).toLocaleString();
+    
+    // 写入本地存储排行榜
+    let historyRecords = JSON.parse(localStorage.getItem("GameCreatorRecords") || "[]");
+    historyRecords.push({ date: new Date().toLocaleDateString(), valuation: Math.floor(valuation), monthsSurvived: GAME_STATE.month });
+    localStorage.setItem("GameCreatorRecords", JSON.stringify(historyRecords));
+    
+    // 清除当前存档，防止利用读档刷分
+    localStorage.removeItem('GameCreatorSave');
+    
     openModal("settlement-modal");
 }
 
@@ -347,7 +416,6 @@ function openAssignModal() { const idleList = document.getElementById("idle-empl
 function assignToProject(empId) { const emp = GAME_STATE.employees.find(e => e.id === empId); if(emp) { emp.projectId = GAME_STATE.currentViewingProjectId; openAssignModal(); refreshViews(); } }
 function removeFromProject(empId) { const emp = GAME_STATE.employees.find(e => e.id === empId); if(emp) { emp.projectId = null; refreshViews(); } }
 
-let globalChartInstance = null; 
 function renderDashboardChart(proj) {
     const canvas = document.getElementById('dash-chart'); if (!canvas) return;
     if (globalChartInstance) globalChartInstance.destroy(); const ctx = canvas.getContext('2d');

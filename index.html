@@ -10,63 +10,83 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <header class="game-hud">
-        <div class="hud-left">
-            <h1>🎮 超神制作人</h1>
-            <div class="hud-stats">
-                <div class="stat-badge money-badge">
-                    <span class="icon">💰</span>
-                    <span id="money-display" class="value">1,000,000</span>
-                </div>
-                <div class="stat-badge influence-badge">
-                    <span class="icon">🌟</span>
-                    <span id="total-influence-display" class="value">0</span>
-                </div>
-                <div class="stat-badge time-badge">
-                    <span class="icon">📅</span>
-                    <span class="value">第 <span id="month-display">1</span> 月</span>
-                </div>
-            </div>
-        </div>
-        <div class="hud-right">
-            <button onclick="openFinanceModal()" class="btn tool-btn">🧾 财务月报</button>
-            <button onclick="endGameAndSettle()" class="btn warning-btn">🏆 结算估值</button>
-            <button id="next-month-btn" class="btn next-btn">推进下个月 ➔</button>
-        </div>
-    </header>
 
-    <main class="game-board">
-        <section class="panel hr-panel">
-            <div class="panel-header">
-                <h2>👥 员工工位 (HR)</h2>
-                <button onclick="openModal('hire-modal')" class="btn action-btn">+ 招募人才</button>
+    <div id="main-menu" class="main-menu-container">
+        <div class="menu-content">
+            <h1 class="game-mega-title">🎮 超神制作人</h1>
+            <p class="game-subtitle">从零开始打造你的游戏帝国 (5年目标)</p>
+            
+            <div class="menu-actions">
+                <button onclick="startNewGame()" class="btn primary-btn btn-mega">🚀 开始新游戏</button>
+                <button onclick="loadGame()" class="btn warning-btn btn-mega">💾 继续游戏 (读取存档)</button>
+                <button onclick="openHistoryModal()" class="btn action-btn btn-mega">🏆 历史帝国估值</button>
             </div>
-            <div id="employee-list" class="grid-container"></div>
-        </section>
+            <p style="margin-top: 30px; color: var(--text-muted); font-size: 0.85em;">v5.0 终极完整版 - By 你</p>
+        </div>
+    </div>
 
-        <section class="panel project-panel">
-            <div class="panel-header">
-                <h2>🚀 研发工作室</h2>
-                <button onclick="openModal('new-project-modal')" class="btn action-btn">+ 立项新游戏</button>
+    <div id="game-ui" class="hidden game-ui-wrapper">
+        <header class="game-hud">
+            <div class="hud-left">
+                <h1>🎮 超神制作人</h1>
+                <div class="hud-stats">
+                    <div class="stat-badge money-badge"><span class="icon">💰</span><span id="money-display" class="value">1,000,000</span></div>
+                    <div class="stat-badge influence-badge"><span class="icon">🌟</span><span id="total-influence-display" class="value">0</span></div>
+                    <div class="stat-badge time-badge"><span class="icon">📅</span><span class="value">第 <span id="month-display">1</span>/60 月</span></div>
+                </div>
             </div>
-            <div id="project-list" class="grid-container"></div>
-        </section>
-    </main>
+            <div class="hud-right">
+                <button onclick="saveGame()" class="btn action-btn">💾 保存进度</button>
+                <button onclick="openFinanceModal()" class="btn tool-btn">🧾 财务月报</button>
+                <button onclick="endGameAndSettle(false)" class="btn warning-btn">🏆 提前结算</button>
+                <button id="next-month-btn" class="btn next-btn bounce-anim">推进下个月 ➔</button>
+            </div>
+        </header>
+
+        <main class="game-board">
+            <section class="panel hr-panel">
+                <div class="panel-header">
+                    <h2>👥 员工工位 (HR)</h2>
+                    <button onclick="openModal('hire-modal')" class="btn action-btn">+ 招募人才</button>
+                </div>
+                <div id="employee-list" class="grid-container">
+                    </div>
+            </section>
+
+            <section class="panel project-panel">
+                <div class="panel-header">
+                    <h2>🚀 研发工作室</h2>
+                    <button onclick="openModal('new-project-modal')" class="btn action-btn">+ 立项新游戏</button>
+                </div>
+                <div id="project-list" class="grid-container">
+                    </div>
+            </section>
+        </main>
+    </div>
+
+    <div id="history-modal" class="modal hidden">
+        <div class="modal-content tycoon-window">
+            <h3 class="text-warning" style="text-align: center;">🏆 公司历代估值榜单</h3>
+            <div id="history-list" class="flex-col" style="max-height: 300px; overflow-y: auto; margin: 20px 0;">
+                </div>
+            <div class="modal-actions"><button onclick="closeModal('history-modal')" class="btn cancel-btn">关闭</button></div>
+        </div>
+    </div>
 
     <div id="new-project-modal" class="modal hidden">
         <div class="modal-content tycoon-window">
             <h3>📝 确立新项目方向</h3>
             <h4 class="section-title">【买断制】前期爆发，后续递减</h4>
             <div class="role-grid">
-                <button class="btn role-btn" onclick="createProject('买断制', '独立肉鸽', 8)">⚔️ 独立肉鸽 (周期:8个月)</button>
-                <button class="btn role-btn" onclick="createProject('买断制', '模拟经营', 15)">🏘️ 模拟经营 (周期:1.5年)</button>
-                <button class="btn role-btn" onclick="createProject('买断制', '3A大作', 24)">🎬 3A大作 (周期:2年)</button>
+                <button class="btn role-btn" onclick="createProject('买断制', '独立肉鸽', 8)">⚔️ 独立肉鸽<br><small>周期:8个月</small></button>
+                <button class="btn role-btn" onclick="createProject('买断制', '模拟经营', 15)">🏘️ 模拟经营<br><small>周期:1.5年</small></button>
+                <button class="btn role-btn" onclick="createProject('买断制', '3A大作', 24)">🎬 3A大作<br><small>周期:2年</small></button>
             </div>
             <h4 class="section-title">【内购制】依赖运营，长线滚雪球</h4>
             <div class="role-grid">
-                <button class="btn role-btn" onclick="createProject('内购制', '休闲肉鸽', 5)">🍉 休闲肉鸽 (周期:5个月)</button>
-                <button class="btn role-btn" onclick="createProject('内购制', '二次元抽卡', 12)">✨ 二次元抽卡 (周期:1年)</button>
-                <button class="btn role-btn" onclick="createProject('内购制', '竞技FPS', 14)">🔫 竞技FPS (周期:1.2年)</button>
+                <button class="btn role-btn" onclick="createProject('内购制', '休闲肉鸽', 5)">🍉 休闲肉鸽<br><small>周期:5个月</small></button>
+                <button class="btn role-btn" onclick="createProject('内购制', '二次元抽卡', 12)">✨ 二次元抽卡<br><small>周期:1年</small></button>
+                <button class="btn role-btn" onclick="createProject('内购制', '竞技FPS', 14)">🔫 竞技FPS<br><small>周期:1.2年</small></button>
             </div>
             <div class="modal-actions"><button onclick="closeModal('new-project-modal')" class="btn cancel-btn">取消</button></div>
         </div>
@@ -75,13 +95,14 @@
     <div id="hire-modal" class="modal hidden">
         <div class="modal-content tycoon-window">
             <h3>🤝 人才招聘市场</h3>
+            <p class="desc-text">定向招募各领域的顶尖人才，薪资将随市场波动。</p>
             <div class="role-grid">
-                <button class="btn role-btn" onclick="hireEmployee('策划')">🧠 策划 (主导进度/留存)</button>
-                <button class="btn role-btn" onclick="hireEmployee('程序')">💻 程序 (推进代码/影响力)</button>
-                <button class="btn role-btn" onclick="hireEmployee('美术')">🎨 美术 (决定画面品质)</button>
-                <button class="btn role-btn" onclick="hireEmployee('QA')">🐛 QA (清扫Bug提升品质)</button>
-                <button class="btn role-btn" onclick="hireEmployee('运营')">📈 运营 (拉升流水/长线)</button>
-                <button class="btn role-btn" onclick="hireEmployee('市场')">📢 市场 (降低买量成本)</button>
+                <button class="btn role-btn" onclick="hireEmployee('策划')">🧠 策划 <br><small>主导进度/留存</small></button>
+                <button class="btn role-btn" onclick="hireEmployee('程序')">💻 程序 <br><small>推进代码/影响力</small></button>
+                <button class="btn role-btn" onclick="hireEmployee('美术')">🎨 美术 <br><small>决定画面品质</small></button>
+                <button class="btn role-btn" onclick="hireEmployee('QA')">🐛 QA测试 <br><small>清扫Bug提升品质</small></button>
+                <button class="btn role-btn" onclick="hireEmployee('运营')">📈 运营 <br><small>拉升流水/长线</small></button>
+                <button class="btn role-btn" onclick="hireEmployee('市场')">📢 市场 <br><small>降低买量成本</small></button>
             </div>
             <div class="modal-actions"><button onclick="closeModal('hire-modal')" class="btn cancel-btn">关闭</button></div>
         </div>
@@ -153,16 +174,16 @@
 
     <div id="finance-modal" class="modal hidden">
         <div class="modal-content tycoon-window receipt-paper">
-            <h3 class="receipt-title">🧾 月度财务流水</h3>
-            <div class="receipt-body">
+            <h3 class="receipt-title" style="color:#111;">🧾 月度财务流水</h3>
+            <div class="receipt-body" style="color:#111;">
                 <div class="receipt-row"><span class="success">游戏总流水</span><span class="success">+ ￥<span id="fin-revenue">0</span></span></div>
-                <div class="divider"></div>
+                <div class="divider" style="border-color:#ccc;"></div>
                 <div class="receipt-row"><span class="danger">人员薪资</span><span class="danger">- ￥<span id="fin-salary">0</span></span></div>
                 <div class="receipt-row"><span class="danger">房租水电</span><span class="danger">- ￥<span id="fin-rent">0</span></span></div>
                 <div class="receipt-row"><span class="danger">服务器/办公</span><span class="danger">- ￥<span id="fin-server">0</span></span></div>
                 <div class="receipt-row"><span class="danger">买量宣发</span><span class="danger">- ￥<span id="fin-ua">0</span></span></div>
-                <div class="divider"></div>
-                <div class="receipt-row total"><span id="fin-profit-label">净利润</span><span id="fin-profit">0</span></div>
+                <div class="divider" style="border-color:#ccc;"></div>
+                <div class="receipt-row total"><span id="fin-profit-label" style="color:#111;">净利润</span><span id="fin-profit">0</span></div>
             </div>
             <div class="modal-actions"><button onclick="closeModal('finance-modal')" class="btn primary-btn">阅</button></div>
         </div>
@@ -171,7 +192,21 @@
     <div id="assign-modal" class="modal hidden"><div class="modal-content tycoon-window"><h3>📥 调配入组</h3><div id="idle-employee-list" class="flex-col"></div><div class="modal-actions"><button onclick="closeModal('assign-modal')" class="btn primary-btn">完成</button></div></div></div>
     <div id="fire-modal" class="modal hidden"><div class="modal-content tycoon-window"><h3>⚠️ 解雇确认</h3><p id="fire-desc"></p><div class="modal-actions"><button onclick="executeFire()" class="btn danger-btn">确认开除</button><button onclick="closeModal('fire-modal')" class="btn cancel-btn">取消</button></div></div></div>
     <div id="event-modal" class="modal hidden"><div class="modal-content tycoon-window"><h3 id="event-title">🚨 突发事件</h3><p id="event-desc" class="desc-text"></p><div id="event-options" class="modal-actions flex-col"></div></div></div>
-    <div id="settlement-modal" class="modal hidden"><div class="modal-content tycoon-window"><h2 class="text-warning" style="text-align: center;">🏆 商业帝国结算</h2><div class="receipt-body"><p>最终账面资金: <strong id="settle-money" class="text-primary">0</strong></p><p>全网总影响力: <strong id="settle-influence" class="text-warning">0</strong></p><div class="divider"></div><h3>公司估值: <span id="settle-valuation" class="text-warning">0</span></h3></div><div class="modal-actions"><button onclick="location.reload()" class="btn primary-btn" style="width: 100%;">保存记录并重新开始</button></div></div></div>
+    
+    <div id="settlement-modal" class="modal hidden">
+        <div class="modal-content tycoon-window">
+            <h2 class="text-warning" style="text-align: center;">🏆 5年商业帝国结算</h2>
+            <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 12px; margin-top: 15px;">
+                <p style="font-size: 1.1em;">最终账面资金: <strong id="settle-money" class="text-primary">0</strong></p>
+                <p style="font-size: 1.1em;">全网总影响力: <strong id="settle-influence" class="text-warning">0</strong></p>
+                <hr style="border-color: #ffffff20; margin: 15px 0;">
+                <h3 style="margin:0;">公司终极估值: <br><span id="settle-valuation" class="text-warning" style="font-size: 2em;">0</span> <span style="font-size:1rem;color:var(--text-muted)">CNY</span></h3>
+            </div>
+            <div class="modal-actions">
+                <button onclick="location.reload()" class="btn primary-btn" style="width: 100%; padding: 15px; font-size: 1.2rem;">返回主菜单</button>
+            </div>
+        </div>
+    </div>
 
     <script src="game.js"></script>
 </body>
