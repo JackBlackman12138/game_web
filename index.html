@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>超神制作人 - Web原型</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="glass-panel">
+        <div class="header-info">
+            <h1>🎮 超神制作人 <span class="version">v2.0 终极版</span></h1>
+            <div class="global-stats">
+                <p>公司资金: <span id="money-display" class="money">1,000,000</span> <span class="currency">CNY</span></p>
+                <p>当前周期: 第 <span id="month-display" class="highlight">1</span> 个月</p>
+            </div>
+        </div>
+        <button id="next-month-btn" class="btn primary-btn glow-effect">推进下个月 ➔</button>
+    </header>
+
+    <main class="game-container">
+        <section class="panel hr-panel glass-panel">
+            <div class="panel-header">
+                <h2>👥 全局人才库 (HR)</h2>
+                <button onclick="openModal('hire-modal')" class="btn action-btn">+ 定向招募</button>
+            </div>
+            <div id="employee-list" class="employee-list">
+                </div>
+        </section>
+
+        <section class="panel project-panel glass-panel">
+            <div class="panel-header">
+                <h2>🚀 项目研发中心</h2>
+                <button onclick="createDummyProject()" class="btn action-btn">+ 创立新项目</button>
+            </div>
+            <div id="project-list" class="project-list">
+                </div>
+        </section>
+    </main>
+
+    <div id="hire-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3>🤝 人才招聘市场</h3>
+            <p>请选择你需要招募的岗位（薪资将根据市场波动）：</p>
+            <div class="role-grid">
+                <button class="btn role-btn" onclick="hireEmployee('策划')">🧠 策划 (主导进度/留存)</button>
+                <button class="btn role-btn" onclick="hireEmployee('程序')">💻 程序 (推进代码/影响力)</button>
+                <button class="btn role-btn" onclick="hireEmployee('美术')">🎨 美术 (决定画面品质)</button>
+                <button class="btn role-btn" onclick="hireEmployee('QA')">🐛 QA (清扫Bug提升品质)</button>
+                <button class="btn role-btn" onclick="hireEmployee('运营')">📈 运营 (拉升流水/长线)</button>
+                <button class="btn role-btn" onclick="hireEmployee('市场')">📢 市场 (降低买量成本)</button>
+            </div>
+            <div class="modal-actions"><button onclick="closeModal('hire-modal')" class="btn">关闭</button></div>
+        </div>
+    </div>
+
+    <div id="project-dashboard-modal" class="modal hidden full-modal">
+        <div class="modal-content glass-panel dashboard-layout">
+            <div class="dash-header">
+                <h2 id="dash-title">项目名称</h2>
+                <button onclick="closeProjectDashboard()" class="btn danger-btn">关闭看板</button>
+            </div>
+            
+            <div class="dash-body">
+                <div class="dash-section stats-section">
+                    <h3>📊 核心数据看板</h3>
+                    <div class="stats-grid">
+                        <div class="stat-box"><span class="label">当前阶段</span><span class="value highlight" id="dash-stage">研发中</span></div>
+                        <div class="stat-box"><span class="label">研发进度</span><span class="value" id="dash-progress">0%</span></div>
+                        <div class="stat-box"><span class="label">产品品质 (美术/QA)</span><span class="value text-primary" id="dash-quality">0</span></div>
+                        <div class="stat-box"><span class="label">市场影响力 (程序)</span><span class="value text-warning" id="dash-influence">0</span></div>
+                        <div class="stat-box"><span class="label">预期留存率 (策划/运营)</span><span class="value text-success" id="dash-retention">0%</span></div>
+                        <div class="stat-box"><span class="label">买量成本减免 (市场)</span><span class="value text-danger" id="dash-uadiscount">0%</span></div>
+                    </div>
+                </div>
+
+                <div class="dash-section team-section">
+                    <div class="section-header">
+                        <h3>👨‍💻 项目专属团队</h3>
+                        <button onclick="openAssignModal()" class="btn action-btn text-small">分配空闲人员</button>
+                    </div>
+                    <div id="dash-team-list" class="dash-team-list">
+                        </div>
+                </div>
+
+                <div class="dash-section finance-section">
+                    <div class="section-header">
+                        <h3>💰 财务与运营报表</h3>
+                        <div id="dash-ua-control" class="hidden">
+                            <label>调整买量:</label>
+                            <select id="ua-select" onchange="changeProjectUA(this.value)">
+                                <option value="0">0 (不买量)</option>
+                                <option value="30000">3万/月</option>
+                                <option value="100000">10万/月</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-wrapper">
+                        <canvas id="dash-chart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="assign-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3>📥 调配人员入组</h3>
+            <p>选择空闲的员工加入当前项目：</p>
+            <div id="idle-employee-list" class="flex-col"></div>
+            <div class="modal-actions"><button onclick="closeModal('assign-modal')" class="btn">完成</button></div>
+        </div>
+    </div>
+
+    <div id="fire-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3>⚠️ 解雇确认</h3>
+            <p id="fire-desc"></p>
+            <div class="modal-actions">
+                <button id="confirm-fire-btn" class="btn danger-btn">确认开除</button>
+                <button onclick="closeModal('fire-modal')" class="btn">取消</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="event-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <h3 id="event-title">🚨 突发事件</h3>
+            <p id="event-desc"></p>
+            <div id="event-options" class="modal-actions flex-col"></div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
